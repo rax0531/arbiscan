@@ -1,0 +1,1 @@
+{"name":"arbiscan","private":true,"version":"0.1.0","type":"module","scripts":{"dev:web":"npm --prefix apps/web run dev","build:web":"npm --prefix apps/web run build","lint:web":"npm --prefix apps/web run lint","dev:api":"npm --prefix workers/api run dev","build:api":"npm --prefix workers/api run build"}}
