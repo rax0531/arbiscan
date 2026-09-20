@@ -1,0 +1,1 @@
+{"name":"@arbiscan/api","private":true,"version":"0.1.0","type":"module","scripts":{"dev":"wrangler dev","build":"tsc --noEmit"},"devDependencies":{"@cloudflare/workers-types":"latest","typescript":"^5.8.0","wrangler":"latest"}}
