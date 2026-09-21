@@ -83,16 +83,6 @@ export default function App() {
     };
   }, [showToast]);
 
-  const showToast = useCallback((msg: string) => {
-    if (toastTimeoutRef.current) {
-      clearTimeout(toastTimeoutRef.current);
-    }
-    setToastMessage(msg);
-    toastTimeoutRef.current = setTimeout(() => {
-      setToastMessage(null);
-    }, 2500);
-  }, []);
-
   const handleToggleWatchlist = useCallback((productId: string) => {
     setProducts((prev) =>
       prev.map((p) => (p.id === productId ? { ...p, isWatchlisted: !p.isWatchlisted } : p))
