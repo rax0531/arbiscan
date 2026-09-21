@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { ScannerTab } from './components/ScannerTab';
@@ -13,7 +13,7 @@ import { WatchlistAlertsTab } from './components/WatchlistAlertsTab';
 import { Toast } from './components/Toast';
 import { INITIAL_PRODUCTS } from './data/mockProducts';
 import { ArbitrageProduct, ActiveTab } from './types';
-import { isSupabaseConfigured, testSupabaseConnection } from './lib/supabase';
+import { fetchProductSourceData, isSupabaseConfigured, testSupabaseConnection } from './lib/supabase';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('scanner');
@@ -31,6 +31,48 @@ export default function App() {
   // Toast feedback
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadProductsFromSupabase() {
+      if (!isSupabaseConfigured) return;
+
+      const result = await fetchProductSourceData();
+      if (cancelled) return;
+
+      if (result.ok && result.data.length > 0) {
+        setProducts((currentProducts) => {
+          const byId = new Map(currentProducts.map((product) => [product.id, product]));
+
+          return result.data
+            .map((row) => {
+              const base = byId.get(row.canonical_key);
+              if (!base) return null;
+
+              return {
+                ...base,
+                ...row.source_data,
+                id: row.canonical_key,
+                title: row.title,
+                category: row.category ?? base.category,
+              } as ArbitrageProduct;
+            })
+            .filter((product): product is ArbitrageProduct => product !== null);
+        });
+        setSupabaseStatus('connected');
+        showToast(`DB 상품 ${result.data.length}개를 불러왔습니다.`);
+      } else if (!result.ok) {
+        showToast(result.message);
+      }
+    }
+
+    loadProductsFromSupabase();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [showToast]);
 
   const showToast = useCallback((msg: string) => {
     if (toastTimeoutRef.current) {
