@@ -1,0 +1,7 @@
+{
+  "name": "ArbiScan",
+  "description": "글로벌 이커머스(아마존 재팬/미국, 미국 월마트, 타겟, 이베이, 라쿠텐 등) 실시간 차익거래(Arbitrage) 퀀트 스캐너, 정밀 마진 계산기 및 알림 플랫폼",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

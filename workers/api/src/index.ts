@@ -1,3 +1,19 @@
-export interface Env{ENVIRONMENT:string;SUPABASE_URL?:string;SUPABASE_SERVICE_ROLE_KEY?:string}
-const json=(data:unknown,status=200)=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8'}});
-export default{async fetch(request:Request,env:Env){const url=new URL(request.url);if(url.pathname==='/api/health')return json({ok:true,service:'arbiscan-api',environment:env.ENVIRONMENT});if(url.pathname==='/api/products'&&request.method==='GET')return json({items:[],source:'database-pending'});return json({error:'Not Found'},404)}};
+export interface Env {
+  ENVIRONMENT: string;
+  SUPABASE_URL?: string;
+  SUPABASE_SERVICE_ROLE_KEY?: string;
+}
+
+const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), {
+  status,
+  headers: { 'content-type': 'application/json; charset=utf-8' },
+});
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+    if (url.pathname === '/api/health') return json({ ok: true, service: 'arbiscan-api', environment: env.ENVIRONMENT });
+    if (url.pathname === '/api/products' && request.method === 'GET') return json({ items: [], source: 'database-pending' });
+    return json({ error: 'Not Found' }, 404);
+  },
+};
