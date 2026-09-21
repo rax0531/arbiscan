@@ -45,33 +45,43 @@ export default function App() {
     let cancelled = false;
 
     async function loadProductsFromSupabase() {
-      if (!isSupabaseConfigured) return;
+      if (!isSupabaseConfigured) {
+        setSupabaseStatus('error');
+        return;
+      }
+
+      setSupabaseStatus('checking');
 
       const result = await fetchProductSourceData();
       if (cancelled) return;
 
-      if (result.ok && result.data.length > 0) {
-        setProducts((currentProducts) => {
-          const byId = new Map(currentProducts.map((product) => [product.id, product]));
-
-          return result.data
-            .map((row) => {
-              const base = byId.get(row.canonical_key);
-              if (!base) return null;
-
-              return {
-                ...base,
-                ...row.source_data,
-                id: row.canonical_key,
-                title: row.title,
-                category: row.category ?? base.category,
-              } as ArbitrageProduct;
-            })
-            .filter((product): product is ArbitrageProduct => product !== null);
-        });
+      if (result.ok) {
         setSupabaseStatus('connected');
-        showToast(`DB 상품 ${result.data.length}개를 불러왔습니다.`);
-      } else if (!result.ok) {
+
+        if (result.data.length > 0) {
+          setProducts((currentProducts) => {
+            const byId = new Map(currentProducts.map((product) => [product.id, product]));
+
+            return result.data
+              .map((row) => {
+                const base = byId.get(row.canonical_key);
+                if (!base) return null;
+
+                return {
+                  ...base,
+                  ...row.source_data,
+                  id: row.canonical_key,
+                  title: row.title,
+                  category: row.category ?? base.category,
+                } as ArbitrageProduct;
+              })
+              .filter((product): product is ArbitrageProduct => product !== null);
+          });
+        }
+
+        showToast(result.message);
+      } else {
+        setSupabaseStatus('error');
         showToast(result.message);
       }
     }
