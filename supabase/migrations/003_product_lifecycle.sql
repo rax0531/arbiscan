@@ -49,7 +49,7 @@ begin
 end;
 $$;
 
--- Remove old inactive products after 90 days.
+-- Remove old inactive products after 30 days.
 -- Watchlisted products are protected from automatic deletion.
 create or replace function purge_expired_products()
 returns integer
@@ -61,7 +61,7 @@ declare
 begin
   delete from products p
    where p.status = 'inactive'
-     and p.last_seen_at < now() - interval '90 days'
+     and p.last_seen_at < now() - interval '30 days'
      and not exists (
        select 1
          from watchlists w
@@ -77,4 +77,59 @@ comment on function mark_stale_products() is
   'Marks active products as inactive when they have not been observed for 7 days.';
 
 comment on function purge_expired_products() is
-  'Deletes inactive products not observed for 90 days, except products present in a watchlist.';
+  'Deletes inactive products not observed for 30 days, except products present in a watchlist.';
+
+
+-- Reuse the same canonical product on every observation.
+-- A manually ignored product remains ignored until explicitly changed by the user.
+create or replace function upsert_product_observation(
+  p_canonical_key text,
+  p_title text,
+  p_category text default null,
+  p_source_data jsonb default null
+)
+returns products
+language plpgsql
+security invoker
+as $$
+declare
+  result_row products;
+begin
+  insert into products (
+    canonical_key,
+    title,
+    category,
+    source_data,
+    status,
+    first_seen_at,
+    last_seen_at,
+    updated_at
+  )
+  values (
+    p_canonical_key,
+    p_title,
+    p_category,
+    p_source_data,
+    'active',
+    now(),
+    now(),
+    now()
+  )
+  on conflict (canonical_key) do update
+    set title = excluded.title,
+        category = coalesce(excluded.category, products.category),
+        source_data = coalesce(excluded.source_data, products.source_data),
+        last_seen_at = now(),
+        updated_at = now(),
+        status = case
+          when products.status = 'ignored' then 'ignored'
+          else 'active'
+        end
+  returning * into result_row;
+
+  return result_row;
+end;
+$$;
+
+comment on function upsert_product_observation(text, text, text, jsonb) is
+  'Creates a canonical product once or refreshes the existing product observation without creating duplicates. Ignored products remain ignored.';
