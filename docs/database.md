@@ -23,14 +23,14 @@ The same canonical product is reused through `canonical_key`.
 - `first_seen_at`: first observation time.
 - `last_seen_at`: most recent observation time.
 - After **7 days without an observation**, active products can be marked `inactive`.
-- After **90 days without an observation**, inactive products can be permanently deleted.
+- After **30 days without an observation**, inactive products can be permanently deleted.
 - Products in a user's `watchlists` are protected from automatic deletion.
 - Price history and related listing/opportunity rows are removed automatically when their parent product is deleted through the existing foreign-key cascade rules.
 
 The migration `003_product_lifecycle.sql` provides:
 
 - `mark_stale_products()` — marks products older than 7 days as inactive.
-- `purge_expired_products()` — deletes inactive products older than 90 days unless they are watchlisted.
+- `purge_expired_products()` — deletes inactive products older than 30 days unless they are watchlisted.
 
 These cleanup functions are database primitives for the application/job scheduler to call later. We will add scheduled execution after the first real marketplace connector is working.
 
@@ -38,8 +38,8 @@ These cleanup functions are database primitives for the application/job schedule
 
 A crawler should **upsert the canonical product**, not insert a new product on every crawl:
 
-1. Find/create the product by `canonical_key`.
-2. Update `last_seen_at`.
+1. Call `upsert_product_observation()` with the stable `canonical_key`.
+2. Update `last_seen_at` on an existing observation.
 3. Keep the product `active` unless it is manually `ignored`.
 4. Store the current marketplace offer in `market_listings`.
 5. Store historical price observations in `price_history`.
