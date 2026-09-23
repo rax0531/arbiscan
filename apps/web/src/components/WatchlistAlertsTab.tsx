@@ -70,7 +70,7 @@ export const WatchlistAlertsTab: React.FC<WatchlistAlertsTabProps> = ({
     return watchlistedItems.filter((item) => {
       const capital =
         item.sourceCurrency === 'JPY'
-          ? Math.round(item.sourcePrice * (jpyKrw / 100))
+          ? Math.round(item.sourcePrice * (jpyKrw))
           : Math.round(item.sourcePrice * usdKrw);
 
       if (filterPreset === 'margin40') return item.roiPercent >= 40;
@@ -86,7 +86,7 @@ export const WatchlistAlertsTab: React.FC<WatchlistAlertsTabProps> = ({
       .map((p) => {
         const capital =
           p.sourceCurrency === 'JPY'
-            ? Math.round(p.sourcePrice * (jpyKrw / 100))
+            ? Math.round(p.sourcePrice * (jpyKrw))
             : Math.round(p.sourcePrice * usdKrw);
         return `"${p.asin}","${p.title.replace(/"/g, '""')}","${p.sourceMarket}",${p.sourcePrice},${p.targetSellingKrw},"${p.roiPercent}%",${capital}`;
       })
@@ -186,7 +186,7 @@ export const WatchlistAlertsTab: React.FC<WatchlistAlertsTabProps> = ({
                 watchlistedItems.filter((i) => {
                   const cap =
                     i.sourceCurrency === 'JPY'
-                      ? Math.round(i.sourcePrice * (jpyKrw / 100))
+                      ? Math.round(i.sourcePrice * (jpyKrw))
                       : Math.round(i.sourcePrice * usdKrw);
                   return cap <= 100000;
                 }).length
@@ -223,7 +223,7 @@ export const WatchlistAlertsTab: React.FC<WatchlistAlertsTabProps> = ({
         {filteredItems.map((item) => {
           const sourcingKrw =
             item.sourceCurrency === 'JPY'
-              ? Math.round(item.sourcePrice * (jpyKrw / 100))
+              ? Math.round(item.sourcePrice * (jpyKrw))
               : Math.round(item.sourcePrice * usdKrw);
           const spreadKrw = item.targetSellingKrw - sourcingKrw;
           const initialCapital = sourcingKrw + 4000; // includes minimal domestic/buffer

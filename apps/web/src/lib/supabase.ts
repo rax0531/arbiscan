@@ -88,3 +88,80 @@ export async function fetchProductSourceData(): Promise<{
     };
   }
 }
+export async function fetchLatestExchangeRate(
+  baseCurrency: string,
+  quoteCurrency: string
+): Promise<{
+  ok: boolean;
+  rate: number | null;
+  observedAt: string | null;
+  message: string;
+}> {
+  if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+    return {
+      ok: false,
+      rate: null,
+      observedAt: null,
+      message: 'Supabase 환경변수가 설정되지 않았습니다.',
+    };
+  }
+
+  try {
+    const params = new URLSearchParams({
+      select: 'base_currency,quote_currency,rate,observed_at,source,rate_date',
+      source: 'eq.frankfurter',
+      base_currency: `eq.${baseCurrency.toUpperCase()}`,
+      quote_currency: `eq.${quoteCurrency.toUpperCase()}`,
+      order: 'rate_date.desc,observed_at.desc',
+      limit: '1',
+    });
+
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/exchange_rates?${params.toString()}`,
+      { headers: getHeaders() }
+    );
+
+    if (!response.ok) {
+      const body = await response.text();
+
+      return {
+        ok: false,
+        rate: null,
+        observedAt: null,
+        message: `환율 조회 실패 ${response.status}: ${body.slice(0, 180)}`,
+      };
+    }
+
+    const rows = (await response.json()) as Array<{
+      base_currency: string;
+      quote_currency: string;
+      rate: number | string;
+      observed_at: string;
+    }>;
+
+    if (rows.length === 0) {
+      return {
+        ok: false,
+        rate: null,
+        observedAt: null,
+        message: `${baseCurrency.toUpperCase()}/${quoteCurrency.toUpperCase()} 환율 데이터가 없습니다.`,
+      };
+    }
+
+    return {
+      ok: true,
+      rate: Number(rows[0].rate),
+      observedAt: rows[0].observed_at,
+      message: `${baseCurrency.toUpperCase()}/${quoteCurrency.toUpperCase()} 환율을 불러왔습니다.`,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      rate: null,
+      observedAt: null,
+      message: error instanceof Error
+        ? error.message
+        : '환율 조회에 실패했습니다.',
+    };
+  }
+}

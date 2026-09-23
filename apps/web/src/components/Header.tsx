@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { RefreshCw, User, ShieldCheck, Zap, Activity } from 'lucide-react';
 import { ActiveTab } from '../types';
 
@@ -8,6 +8,10 @@ interface HeaderProps {
   jpyKrw: number;
   onRefreshFx?: () => void;
   isFxRefreshing?: boolean;
+  manualUsdKrw: number | null;
+  manualJpyKrw: number | null;
+  onApplyManualFx: (usd: number, jpy: number) => void;
+  onRestoreDefaultFx: () => void;
 }
 
 const TAB_TITLES: Record<ActiveTab, string> = {
@@ -22,9 +26,43 @@ export const Header: React.FC<HeaderProps> = ({
   usdKrw,
   jpyKrw,
   onRefreshFx,
-  isFxRefreshing = false
+  isFxRefreshing = false,
+  manualUsdKrw,
+  manualJpyKrw,
+  onApplyManualFx,
+  onRestoreDefaultFx
 }) => {
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showFxModal, setShowFxModal] = useState(false);
+  const [editUsdKrw, setEditUsdKrw] = useState('');
+  const [editJpyKrw, setEditJpyKrw] = useState('');
+
+  const openFxModal = () => {
+    setEditUsdKrw(String(usdKrw));
+    setEditJpyKrw(String(jpyKrw));
+    setShowFxModal(true);
+  };
+
+  const handleApplyFx = () => {
+    const usd = Number(editUsdKrw);
+    const jpy = Number(editJpyKrw);
+
+    if (!Number.isFinite(usd) || usd <= 0) {
+      return;
+    }
+
+    if (!Number.isFinite(jpy) || jpy <= 0) {
+      return;
+    }
+
+    onApplyManualFx(usd, jpy);
+    setShowFxModal(false);
+  };
+
+  const handleRestoreDefaultFx = () => {
+    onRestoreDefaultFx();
+    setShowFxModal(false);
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 w-full z-50 bg-[#080e1b]/90 backdrop-blur-xl border-b border-[#1a1f2d] shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
@@ -82,15 +120,24 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="flex items-center gap-1 shrink-0">
               <span className="text-[#849588]">USD/KRW</span>
               <span className="text-[#dde2f5] font-semibold">{usdKrw.toLocaleString()}원</span>
-              <span className="text-[#00f59b] text-[9px] font-bold">▲0.2%</span>
             </div>
             <span className="text-[#3b4a3f]">|</span>
             <div className="flex items-center gap-1 shrink-0">
               <span className="text-[#849588]">JPY/KRW</span>
               <span className="text-[#dde2f5] font-semibold">{jpyKrw.toLocaleString()}원</span>
-              <span className="text-[#ffb4ab] text-[9px] font-bold">▼0.1%</span>
             </div>
           </div>
+
+<button
+            onClick={openFxModal}
+            className="flex items-center gap-1 text-[9px] text-[#849588] hover:text-[#00f59b] transition-colors shrink-0"
+          >
+            <span className="font-bold">
+              {manualUsdKrw !== null || manualJpyKrw !== null
+                ? '수동 환율'
+                : '환율 수정'}
+            </span>
+          </button>
 
           <button
             onClick={onRefreshFx}
@@ -102,6 +149,84 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </div>
       </div>
+
+      {/* FX edit modal */}
+      {showFxModal && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm"
+          onClick={() => setShowFxModal(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-xl border border-[#3b4a3f] bg-[#161b29] p-5 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-[#dde2f5]">
+                  환율 수정
+                </h3>
+                <p className="mt-1 text-[10px] text-[#849588]">
+                  수동 환율은 모든 화면에 동일하게 적용됩니다.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowFxModal(false)}
+                className="text-[#849588] hover:text-[#dde2f5]"
+                aria-label="환율 수정 창 닫기"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <label className="flex flex-col gap-1">
+                <span className="text-[10px] font-bold text-[#849588]">
+                  USD/KRW
+                </span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editUsdKrw}
+                  onChange={(event) => setEditUsdKrw(event.target.value)}
+                  className="w-full rounded-lg border border-[#3b4a3f] bg-[#0d1320] px-3 py-2 text-sm text-[#dde2f5] outline-none focus:border-[#00f59b]"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="text-[10px] font-bold text-[#849588]">
+                  JPY/KRW
+                </span>
+                <input
+                  type="number"
+                  step="0.0001"
+                  min="0"
+                  value={editJpyKrw}
+                  onChange={(event) => setEditJpyKrw(event.target.value)}
+                  className="w-full rounded-lg border border-[#3b4a3f] bg-[#0d1320] px-3 py-2 text-sm text-[#dde2f5] outline-none focus:border-[#00f59b]"
+                />
+              </label>
+            </div>
+
+            <div className="mt-5 flex gap-2">
+              <button
+                onClick={handleRestoreDefaultFx}
+                className="flex-1 rounded-lg border border-[#3b4a3f] bg-[#242a38] px-3 py-2 text-[11px] font-bold text-[#b9cbbd] transition-colors hover:bg-[#2f3543]"
+              >
+                기본 환율 사용
+              </button>
+
+              <button
+                onClick={handleApplyFx}
+                className="flex-1 rounded-lg bg-[#00f59b] px-3 py-2 text-[11px] font-bold text-[#07120f] transition-colors hover:bg-[#18ffad]"
+              >
+                적용하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Profile quick modal */}
       {showProfileModal && (

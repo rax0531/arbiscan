@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,17 +13,32 @@ import { WatchlistAlertsTab } from './components/WatchlistAlertsTab';
 import { Toast } from './components/Toast';
 import { INITIAL_PRODUCTS } from './data/mockProducts';
 import { ArbitrageProduct, ActiveTab } from './types';
-import { fetchProductSourceData, isSupabaseConfigured, testSupabaseConnection } from './lib/supabase';
+import {
+  fetchProductSourceData,
+  fetchLatestExchangeRate,
+  isSupabaseConfigured,
+  testSupabaseConnection,
+} from './lib/supabase';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('scanner');
   const [products, setProducts] = useState<ArbitrageProduct[]>(INITIAL_PRODUCTS);
   const [selectedProductId, setSelectedProductId] = useState<string>('prod-turntable');
   
-  // Real-time exchange rates
-  const [usdKrw, setUsdKrw] = useState<number>(1385);
-  const [jpyKrw, setJpyKrw] = useState<number>(912);
-  const [isFxRefreshing, setIsFxRefreshing] = useState<boolean>(false);
+ // Exchange rates
+// defaultFx: Supabase/Frankfurter에서 가져온 기본 환율
+// manualFx: 사용자가 직접 지정한 환율. null이면 기본 환율 사용
+const [defaultUsdKrw, setDefaultUsdKrw] = useState<number>(1361.89);
+const [defaultJpyKrw, setDefaultJpyKrw] = useState<number>(8.6509);
+
+const [manualUsdKrw, setManualUsdKrw] = useState<number | null>(null);
+const [manualJpyKrw, setManualJpyKrw] = useState<number | null>(null);
+
+const usdKrw = manualUsdKrw ?? defaultUsdKrw;
+const jpyKrw = manualJpyKrw ?? defaultJpyKrw;
+
+const [isFxRefreshing, setIsFxRefreshing] = useState<boolean>(false);
+
   const [supabaseStatus, setSupabaseStatus] = useState<'idle' | 'checking' | 'connected' | 'error'>(
     isSupabaseConfigured ? 'idle' : 'error'
   );
@@ -93,6 +108,43 @@ export default function App() {
     };
   }, [showToast]);
 
+   useEffect(() => {
+    let cancelled = false;
+
+    async function loadExchangeRates() {
+      const [usdResult, jpyResult] = await Promise.all([
+        fetchLatestExchangeRate('USD', 'KRW'),
+        fetchLatestExchangeRate('JPY', 'KRW'),
+      ]);
+
+      if (cancelled) return;
+
+      let hasUpdate = false;
+
+      if (usdResult.ok && usdResult.rate !== null) {
+        setDefaultUsdKrw(usdResult.rate);
+        hasUpdate = true;
+      }
+
+      if (jpyResult.ok && jpyResult.rate !== null) {
+        setDefaultJpyKrw(jpyResult.rate);
+        hasUpdate = true;
+      }
+
+      if (hasUpdate) {
+        showToast('기본 환율을 업데이트했습니다.');
+      } else {
+        showToast('기본 환율을 불러오지 못했습니다.');
+      }
+    }
+
+    loadExchangeRates();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [showToast]);
+
   const handleToggleWatchlist = useCallback((productId: string) => {
     setProducts((prev) =>
       prev.map((p) => (p.id === productId ? { ...p, isWatchlisted: !p.isWatchlisted } : p))
@@ -103,18 +155,49 @@ export default function App() {
     setSelectedProductId(product.id);
   }, []);
 
-  const handleRefreshFx = useCallback(() => {
+    const handleRefreshFx = useCallback(async () => {
     setIsFxRefreshing(true);
-    showToast('외환 마켓 실시간 환율 틱 스트림 동기화 중...');
-    setTimeout(() => {
-      // Simulate slight micro-ticks
-      const deltaUsd = (Math.random() - 0.5) * 4;
-      const deltaJpy = (Math.random() - 0.5) * 2;
-      setUsdKrw((prev) => Math.round(prev + deltaUsd));
-      setJpyKrw((prev) => Math.round(prev + deltaJpy));
+
+    try {
+      const [usdResult, jpyResult] = await Promise.all([
+        fetchLatestExchangeRate('USD', 'KRW'),
+        fetchLatestExchangeRate('JPY', 'KRW'),
+      ]);
+
+      if (usdResult.ok && usdResult.rate !== null) {
+        setDefaultUsdKrw(usdResult.rate);
+      }
+
+      if (jpyResult.ok && jpyResult.rate !== null) {
+        setDefaultJpyKrw(jpyResult.rate);
+      }
+
+      if (usdResult.ok || jpyResult.ok) {
+        showToast('기본 환율을 새로고침했습니다.');
+      } else {
+        showToast('환율을 불러오지 못했습니다.');
+      }
+    } catch (error) {
+      console.error('환율 새로고침 실패:', error);
+      showToast('환율 새로고침에 실패했습니다.');
+    } finally {
       setIsFxRefreshing(false);
-      showToast('실시간 환율 패킷 갱신 완료: USD 1,385원 / JPY 912원');
-    }, 600);
+    }
+  }, [showToast]);
+
+  const handleApplyManualFx = useCallback(
+    (usd: number, jpy: number) => {
+      setManualUsdKrw(usd);
+      setManualJpyKrw(jpy);
+      showToast('수동 환율을 적용했습니다.');
+    },
+    [showToast]
+  );
+
+  const handleRestoreDefaultFx = useCallback(() => {
+    setManualUsdKrw(null);
+    setManualJpyKrw(null);
+    showToast('기본 환율로 복원했습니다.');
   }, [showToast]);
 
   const handleTestSupabase = useCallback(async () => {
@@ -132,12 +215,16 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#0d1320] text-[#dde2f5] flex flex-col relative font-['JetBrains_Mono',monospace]">
       {/* Top Fixed Header with Brand & FX Ticker */}
-      <Header
+       <Header
         activeTab={activeTab}
         usdKrw={usdKrw}
         jpyKrw={jpyKrw}
         onRefreshFx={handleRefreshFx}
         isFxRefreshing={isFxRefreshing}
+        manualUsdKrw={manualUsdKrw}
+        manualJpyKrw={manualJpyKrw}
+        onApplyManualFx={handleApplyManualFx}
+        onRestoreDefaultFx={handleRestoreDefaultFx}
       />
 
       {/* Main Screen Content */}
@@ -156,6 +243,8 @@ export default function App() {
             onSelectProduct={handleSelectProduct}
             onNavigateTab={setActiveTab}
             onShowToast={showToast}
+            usdKrw={usdKrw}
+            jpyKrw={jpyKrw}
           />
         )}
 

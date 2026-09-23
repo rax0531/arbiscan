@@ -146,7 +146,7 @@ export const ArbitrageTableTab: React.FC<ArbitrageTableTabProps> = ({
     list = list.filter((p) => {
       const cost =
         p.sourceCurrency === 'JPY'
-          ? Math.round(p.sourcePrice * (jpyKrw / 100))
+          ? Math.round(p.sourcePrice * (jpyKrw))
           : Math.round(p.sourcePrice * usdKrw);
       return cost >= minCostKrw && cost <= maxCostKrw;
     });
@@ -173,9 +173,9 @@ export const ArbitrageTableTab: React.FC<ArbitrageTableTabProps> = ({
     } else if (sortField === 'capital') {
       list.sort((a, b) => {
         const costA =
-          a.sourceCurrency === 'JPY' ? a.sourcePrice * (jpyKrw / 100) : a.sourcePrice * usdKrw;
+          a.sourceCurrency === 'JPY' ? a.sourcePrice * (jpyKrw) : a.sourcePrice * usdKrw;
         const costB =
-          b.sourceCurrency === 'JPY' ? b.sourcePrice * (jpyKrw / 100) : b.sourcePrice * usdKrw;
+          b.sourceCurrency === 'JPY' ? b.sourcePrice * (jpyKrw) : b.sourcePrice * usdKrw;
         return costA - costB;
       });
     } else if (sortField === 'risk') {
@@ -237,7 +237,7 @@ export const ArbitrageTableTab: React.FC<ArbitrageTableTabProps> = ({
       .map((p) => {
         const sourcingKrw =
           p.sourceCurrency === 'JPY'
-            ? Math.round(p.sourcePrice * (jpyKrw / 100))
+            ? Math.round(p.sourcePrice * (jpyKrw))
             : Math.round(p.sourcePrice * usdKrw);
         const foreignCost = `${p.sourceCurrency === 'JPY' ? '¥' : '$'}${p.sourcePrice}`;
         return `"${p.asin}","${p.title.replace(/"/g, '""')}","미개봉 신품","${p.category}","${p.sourceMarket}","${p.sourceUrl}",${foreignCost},${sourcingKrw},${p.naverLowestKrw},${p.netProfitKrw},${p.roiPercent},"${p.riskTitle}"`;
@@ -544,7 +544,7 @@ export const ArbitrageTableTab: React.FC<ArbitrageTableTabProps> = ({
           {sortedProducts.map((p) => {
             const sourcingKrw =
               p.sourceCurrency === 'JPY'
-                ? Math.round(p.sourcePrice * (jpyKrw / 100))
+                ? Math.round(p.sourcePrice * (jpyKrw))
                 : Math.round(p.sourcePrice * usdKrw);
             const foreignPriceFormatted =
               p.sourceCurrency === 'JPY'
@@ -686,7 +686,7 @@ export const ArbitrageTableTab: React.FC<ArbitrageTableTabProps> = ({
           {sortedProducts.map((p) => {
             const sourcingKrw =
               p.sourceCurrency === 'JPY'
-                ? Math.round(p.sourcePrice * (jpyKrw / 100))
+                ? Math.round(p.sourcePrice * (jpyKrw))
                 : Math.round(p.sourcePrice * usdKrw);
             const foreignPriceFormatted =
               p.sourceCurrency === 'JPY'

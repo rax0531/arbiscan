@@ -45,7 +45,7 @@ export const MarginCalculatorTab: React.FC<MarginCalculatorTabProps> = ({
     setSellingPriceKrw(selectedProduct.targetSellingKrw);
   }, [selectedProduct.id, selectedProduct.sourcePrice, selectedProduct.targetSellingKrw]);
 
-  const fxRate = selectedProduct.sourceCurrency === 'JPY' ? jpyKrw / 100 : usdKrw;
+  const fxRate = selectedProduct.sourceCurrency === 'JPY' ? jpyKrw : usdKrw;
 
   // Real-time calculations
   const {
@@ -262,7 +262,7 @@ export const MarginCalculatorTab: React.FC<MarginCalculatorTabProps> = ({
               )}
 
               <span className="font-['JetBrains_Mono'] text-[10px] text-[#849588] px-1.5 py-0.5 rounded font-semibold">
-                환율: 100엔={jpyKrw}원 · $1={usdKrw}원
+                환율: 1엔={jpyKrw}원 · $1={usdKrw}원
               </span>
             </div>
           </div>

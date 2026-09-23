@@ -26,6 +26,8 @@ interface ScannerTabProps {
   onSelectProduct: (product: ArbitrageProduct) => void;
   onNavigateTab: (tab: ActiveTab) => void;
   onShowToast: (msg: string) => void;
+  usdKrw: number;
+  jpyKrw: number;
 }
 
 const SOURCING_HUBS = [
@@ -43,7 +45,9 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
   products,
   onSelectProduct,
   onNavigateTab,
-  onShowToast
+  onShowToast,
+  usdKrw,
+  jpyKrw
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedHub, setSelectedHub] = useState<string>('all');
@@ -148,8 +152,8 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
       // 3. Sourcing Cost Range (KRW) filter
       const pCostKrw =
         p.sourceCurrency === 'JPY'
-          ? Math.round(p.sourcePrice * 9.12)
-          : Math.round(p.sourcePrice * 1385);
+    ? Math.round(p.sourcePrice * jpyKrw)
+    : Math.round(p.sourcePrice * usdKrw);
       if (pCostKrw < minCostKrw || pCostKrw > maxCostKrw) {
         return false;
       }
@@ -663,8 +667,8 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
                 : `$${item.sourcePrice.toLocaleString()}`;
             const sourcingKrw =
               item.sourceCurrency === 'JPY'
-                ? Math.round(item.sourcePrice * 9.12)
-                : Math.round(item.sourcePrice * 1385);
+? Math.round(item.sourcePrice * jpyKrw)
+: Math.round(item.sourcePrice * usdKrw);
 
             return (
               <div
