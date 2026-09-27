@@ -1,0 +1,829 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="ko" xml:lang="ko" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta name="robots" content="noindex,nofollow" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta http-equiv="Content-Script-Type" content="text/javascript" />
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<META NAME="description" CONTENT="최저가 에누리 - 가격비교 사이트 에누리닷컴입니다.">
+<META NAME="keyword" CONTENT="휴대폰, 사무, 생활가전, 용품, 영상음향, 컴퓨터, 자동차, 명품, 잡화, 스포츠, 유아, 완구, 가구, 화장품, 식품, 가격비교, 쇼핑몰, 최저가">
+<link rel="shortcut icon" href="https://img.enuri.info/2014/layout/favicon_enuri.ico">
+<title>쇼핑몰 이동</title>
+<!--
+<link rel="stylesheet" href="/common/css/move.css" type="text/css">
+ -->
+<script type="text/javascript" src="/common/js/Log_Header.js"></script>
+<script language="javascript" src="/common/js/lib/prototype.js"></script>
+<script type="text/javascript" src="/common/js/lib/jquery-1.9.1.min.js"></script>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-G68WJJZZ6E"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-G68WJJZZ6E');
+</script>
+<script>
+//Google Tag Manager 
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-KXJLQ9T');
+// End Google Tag Manager 
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=AW-966646648"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'AW-966646648');
+</script>
+
+<!-- Naver 전환 스크립트 -->
+<script type='text/javascript' src='//wcs.naver.net/wcslog.js'></script>
+<script type='text/javascript'>
+if(window.wcs){
+if(!wcs_add) var wcs_add = {};
+wcs_add['wa'] = 's_462d6ab741ed';
+var _conv = {};
+_conv.type = 'custom001';
+_conv.value = '546360';
+wcs.trans(_conv);
+}
+</script> 
+<!-- End Naver 전환 스크립트 -->
+
+<!-- Naver 공통 스크립트 -->  
+<script type="text/javascript"> 
+if (!wcs_add) var wcs_add={};
+wcs_add["wa"] = "s_462d6ab741ed";
+if (!_nasa) var _nasa={};
+if(window.wcs){
+wcs.inflow();
+wcs_do(_nasa);
+}
+</script>
+<!-- End Naver 공통 스크립트 -->	
+
+<script>
+	  //jquery prototype 충돌방지
+	  jQuery.noConflict();
+	  var j$ = jQuery;
+</script>
+<script language="JavaScript">
+<!--
+/**
+ * 문자열을 형식화(3자리마다 콤마 삽입)된 식으로 반환합니다.
+ */
+String.prototype.NumberFormat = function() {
+    var str = this.replace(/,/g,"");
+    var strLength = str.length;
+    if (strLength<=3) return str;
+    var strOutput = "";
+    var mod = 3 - (strLength % 3);
+    var i;
+    for (i=0; i<strLength; i++)
+    {
+        strOutput+=str.charAt(i);
+        if (i < strLength - 1)
+        {
+            mod++;
+            if ((mod % 3) == 0)
+            {
+                strOutput +=",";
+                mod = 0;
+            }
+        }
+    }
+    return strOutput;
+}
+
+function insertLog(logNum){
+    var url = "/view/Loginsert.jsp";
+    var param = "kind="+logNum;
+    var getRec = new Ajax.Request(
+        url,
+        {
+            method:'get',parameters:param
+        }
+    );
+}
+
+function insertLogCate(logNum,cate){
+	var url = "/view/Loginsert_2010.jsp"
+	var param = "kind="+logNum+"&cate="+cate;
+	var getRec = new Ajax.Request(
+	        url,
+	        {
+	            method:'get',parameters:param
+	        }
+	    );
+}
+//Neov 전용 로그 함수
+var varNeovKeywd = "";
+var varNeovMedia = "";
+var varModelno = "0";
+var varPlno = "31465336265";
+
+function neovLog() {
+	var url = "/api/neovBigLog.jsp"
+	var param =  "part=co&keyword="+varNeovKeywd+"&modelno="+varModelno+"&plno="+varPlno+"&mediacode="+varNeovMedia;
+   	var getRec = new Ajax.Request(
+        url,
+        {
+            method:'get',parameters:param
+        }
+    );
+}
+
+try
+{
+	function afterPcCtu(originalRequest){
+	}
+    //var url_b = "/move/price_check.jsp";
+    //var param_b = "szVcode=20883&szRedirect=https%3A%2F%2Fwww.shoppingntmall.com%2Fdisplay%2Fgoods%2F28648340%3FmediaCode%3DEC29&mPrice=546360&PriceCard=0&iPlno=31465336265&szCoupon=0&cate=036027&modelno=0&deliveryinfo=무료배송&goodscode=28648340";
+    //var url_b = "/move/ctuSyncAction.jsp";
+    //var param_b = "ctuActionType=2&shop_code=20883&goods_code=28648340&pl_no=31465336265";
+    var url_b = "/move/ctuV2.jsp";
+    var param_b = "ctu_test=N&system_type=3&device=1&service=1&shop_code=20883&goods_code=28648340&pl_no=31465336265&user_ip=121.157.46.67&openShopCheck=false&shop_type=2";
+    var getHitProd = new Ajax.Request(
+        url_b,
+        {
+        method:'get',parameters:param_b,onComplete:afterPcCtu
+        }
+    );
+} catch (e){
+}
+-->
+</script>
+<script language="JavaScript">
+</script>
+<script language="JavaScript">
+<!--
+    var varMoveTimer;
+    let letFrom = "";
+      if(letFrom !==""){
+        let fromArray = letFrom.split("|");
+        if(fromArray.includes("alarm")){
+            if(fromArray.includes("toast") && fromArray.includes("day")){
+                insertLog(31384);
+                //토스트 알림 
+            }else if(fromArray.includes("toast") && fromArray.includes("limits")){
+                insertLog(31385);
+            }else if(fromArray.includes("day")){
+                //알림
+                insertLog(31382);
+            }else if(fromArray.includes("limits")){
+                insertLog(31383);
+            }
+        }
+    }
+    
+
+    function goAfter2Second(){
+        
+        varMoveTimer = self.setTimeout("CmdGoLink()", 1000);
+        
+    }
+
+    function isDiscontinuedShop(shopCode) {
+        var discontinuedShops = [6641, 6508, 43236, 7857, 55, 90, 6711];
+        return discontinuedShops.indexOf(shopCode) !== -1;
+    }
+    
+    function CmdGoLink(){
+
+    	var vcode = "20883";
+    	
+    	if (isDiscontinuedShop(parseInt(vcode))) {
+            alert("해당 쇼핑몰은 서비스 제공이 중단된 쇼핑몰로 구매 불가능합니다.");
+            window.close();
+            return fasle;
+        }
+
+    	if( "7943" == vcode || "6641" == vcode ){ //에누리PC //티몬
+
+    		
+    			location.href = "https://www.shoppingntmall.com/display/goods/28648340?mediaCode=EC29";
+    		
+
+    	}else{
+    		location.href = "https://www.shoppingntmall.com/display/goods/28648340?mediaCode=EC29";
+    	}
+    }
+
+    if(window.addEventListener){
+        window.addEventListener("load",goAfter2Second,false);
+    }else if(window.attachEvent){
+        window.attachEvent("onload",goAfter2Second);
+    }else{
+        window.onload=goAfter2Second;
+    }
+
+    var btnImg = [];
+
+    btnImg.push("https://img.enuri.info/2014/layout/btn_stop.gif");
+    btnImg.push("https://img.enuri.info/2014/layout/btn_move.gif");
+
+    function changeImg(img) {
+        var _idx = img.src != btnImg[0] ? 0:1;
+
+        img.src= btnImg[_idx];
+
+        if(_idx == 1){
+            insertLog(2049);
+            clearInterval(varMoveTimer);
+        } else {
+            insertLog(2050);
+            goAfter2Second();
+        }
+    }
+
+    function changeImgNew(flag) {
+/*
+    	var _idx = img.src != btnImg[0] ? 0:1;
+        img.src= btnImg[_idx];
+ */
+	 	if(flag == 'stop'){
+            insertLog(2049);
+            clearInterval(varMoveTimer);
+        } else {
+            insertLog(2050);
+            goAfter2Second();
+        }
+    }
+    -->
+
+    // 이미지 fallback 처리: src 실패 시 fallbackUrl → 그래도 실패 시 placeholder
+    function imgFallback(img, fallbackUrl) {
+        const placeholder = '//img.enuri.info/images/home/thumb_none_300.jpg';
+        if (!fallbackUrl || fallbackUrl === img.src) {
+            img.onerror = null;
+            if (img.src !== placeholder) img.src = placeholder;
+            return;
+        }
+        img.onerror = function() {
+            img.onerror = null;
+            if (img.src !== placeholder) img.src = placeholder;
+        };
+        img.src = fallbackUrl;
+    }
+</script>
+<link rel="stylesheet" href="/css/move.css?v=20210510" type="text/css">
+<!-- 신규 디자인 적용 2017.07.12. -->
+	<!-- 에누리 메타 픽셀 - 이벤트 코드 추가 2024.08.08 -->
+	<script>
+		!function(f,b,e,v,n,t,s)
+		{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+		n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+		if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+		n.queue=[];t=b.createElement(e);t.async=!0;
+		t.src=v;s=b.getElementsByTagName(e)[0];
+		s.parentNode.insertBefore(t,s)}(window, document,'script',
+		'https://connect.facebook.net/en_US/fbevents.js');
+		fbq('init', '1448547908729774');
+		fbq('track', 'PageView');
+		fbq('track', 'Purchase', {value: 546360 , currency: 'KRW'});
+	</script>
+	<noscript>
+		<img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1448547908729774&ev=PageView&noscript=1"/>
+	</noscript>
+<script>
+	window.__pcUxlogExtraParams = window.__pcUxlogExtraParams || {};
+	window.__pcUxlogExtraParams.cate = "036027";window.__pcUxlogExtraParams.shopcode = "20883";window.__pcUxlogExtraParams.goodscode = "28648340";</script>
+<script src="//cdn.evgnet.com/beacon/m55685555561u3u3c13n3n3z089564273/enuri/scripts/evergage.min.js"></script>
+<script src="/js/dsac.min.js?v=20260610"></script>
+<script src="/js/uxlog.min.js?v=20260610"></script><script>
+
+ let m_idx_dsacUser = "";
+
+ function isMobileDsac() {
+	  // 간단한 모바일 디바이스 체크 (userAgent 기반)
+	  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+	}
+
+ // params 키를 소문자로 정규화
+ function toLowerKeys(obj) {
+	 const out = {};
+	 Object.keys(obj || {}).forEach(function(k){
+		 out[k.toLowerCase()] = obj[k];
+	 });
+	 return out;
+ }
+
+ let pageVal = url_pagecode_map();
+
+ if( pageVal.code ){
+
+	 let device = isMobileDsac() ? "mw" : "pc" ;
+
+	 // console.log(pageVal);
+
+	 // 페이지 sync JS 의 history.pushState/replaceState 가 default 파라미터를 채우는 패턴 대응:
+	 //   1) history API 후킹 → URL 변경 직후 PV 발송 (default-fill 후 시점 캡처)
+	 //   2) DOMContentLoaded fallback → history 변경이 안 일어나는 페이지 대비
+	 // pvSent 가드로 중복 발송 방지.
+	 let pvSent = false;
+	 function _sendPv() {
+		 if (pvSent) return;
+		 let freshPageVal = url_pagecode_map();
+		 if (!freshPageVal.code) return;
+		 try {
+			 if (window.DSAC_V2 && typeof DSAC_V2.execute === 'function') {
+				 DSAC_V2.execute({
+					 mid : m_idx_dsacUser,
+					 platform: device,
+					 page: freshPageVal.code,
+					 action: "pv",
+					 params: freshPageVal.params
+				 });
+				 pvSent = true;
+				 // console.log("pc uxlog PV sent", freshPageVal);
+			 }
+		 } catch(e) {
+			 console.log(e);
+		 }
+	 }
+
+	 // healthy(EDA~EDF) 페이지는 sync JS 의 history.pushState/replaceState 가 default 파라미터를
+	 // 채우는 패턴이 있으므로 history 후킹 + DOMContentLoaded fallback 으로 PV 를 미룬다.
+	 // 그 외 페이지는 변경 전 동작 그대로 즉시 발송 (회귀 영향 차단).
+	 let isHealthyPage = pageVal.code.charAt(0) === 'E' && pageVal.code.charAt(1) === 'D';
+
+	 if (isHealthyPage) {
+		 if (!window.__pcUxlogHistoryHooked) {
+			 window.__pcUxlogHistoryHooked = true;
+			 var origReplaceState = history.replaceState;
+			 history.replaceState = function () {
+				 origReplaceState.apply(this, arguments);
+				 setTimeout(_sendPv, 0);
+			 };
+			 var origPushState = history.pushState;
+			 history.pushState = function () {
+				 origPushState.apply(this, arguments);
+				 setTimeout(_sendPv, 0);
+			 };
+		 }
+		 if (document.readyState === 'complete' || document.readyState === 'interactive') {
+			 setTimeout(_sendPv, 300);
+		 } else {
+			 document.addEventListener('DOMContentLoaded', function() { setTimeout(_sendPv, 300); });
+		 }
+	 } else {
+		 _sendPv();
+	 }
+ }
+ function url_pagecode_map(){
+
+	 // 일괄 제거는 pc_url_code 에 해시 포함 키가 없다는 전제. 해시로 PV 코드를 구분하는
+	 // 페이지가 생기면 mUxlogPage.js 처럼 해당 페이지만 해시를 유지하는 가드로 바꿀 것.
+	 let currentPage = window.location.href.split('#')[0];
+
+	 if( currentPage.indexOf("stage1.enuri.com/m/") > -1 ){
+		 currentPage = currentPage.replace("stage1","m");
+	 }else if( currentPage.indexOf("stage1.enuri.com") > -1 ){
+		 currentPage = currentPage.replace("stage1","www");
+	 }else if( currentPage.indexOf("https://enuri.com") > -1 ){
+		 currentPage = currentPage.replace("enuri.com","www.enuri.com");
+	 }else if( currentPage.indexOf("https://179.enuri.com") > -1 ){
+		 currentPage = currentPage.replace("179.enuri.com","www.enuri.com");
+	 }
+
+
+
+	 let cleanedUrl = currentPage;
+
+	 let paramYN  = false;
+	 let result = {};
+
+	if( currentPage.indexOf("keyword=") > -1 ){
+
+		const urlParams  =  new URLSearchParams(window.location.search);
+		let keyword = urlParams.get('keyword');
+
+		if(keyword) {
+			if(currentPage.indexOf("/healthy/search.jsp") > -1){
+				result.search_keyword = keyword;
+			} else {
+				result.keyword = keyword;
+			}
+		}
+
+		paramYN = true;
+
+	//}else if( currentPage.indexOf("/detail.jsp") > -1){
+	//	const urlParams  =  new URLSearchParams(window.location.search);
+	//	let modelno = urlParams.get('modelno');
+	//	let delivery = urlParams.get('delivery');
+	//	let cardDiscount = urlParams.get('cardDiscount');
+	//	let tab = urlParams.get('tab');
+	//	let tagNo = urlParams.get('tagNo');
+	//	let from = urlParams.get('from');
+	//	let noti = urlParams.get('noti');
+	//
+	//	if(modelno)  result.modelno = modelno;
+	//	if(delivery)  result.delivery = delivery;
+	//	if(cardDiscount)  result.cardDiscount = cardDiscount;
+	//	if(tab)  result.tab = tab;
+	//	if(tagNo)  result.tagNo = tagNo;
+	//	if(from)  result.from = from;
+	//	if(noti)  result.noti = noti;
+	//
+	//	paramYN = true;
+
+	}else if( currentPage.indexOf("cate=") > -1 ){
+		const urlParams  =  new URLSearchParams(window.location.search);
+		let cate = urlParams.get('cate');
+
+		if(cate)  result.cate = cate;
+
+		paramYN = true;
+	}else if( currentPage.indexOf("modelno=") > -1 ){
+		const urlParams  =  new URLSearchParams(window.location.search);
+		let modelno = urlParams.get('modelno');
+
+		if(modelno)  result.modelno = modelno;
+
+		paramYN = true;
+	}else if( currentPage.indexOf("plno=") > -1 || currentPage.indexOf("pl_no=") > -1){
+		const urlParams  =  new URLSearchParams(window.location.search);
+		let plno = urlParams.get('plno');
+
+		if(plno)  result.plno = plno;
+
+		paramYN = true;
+	}else if( currentPage.indexOf("adsNo=") > -1 ){
+		const urlParams  =  new URLSearchParams(window.location.search);
+		let adsNo = urlParams.get('adsNo');
+
+		if(adsNo)  result.adsNo= adsNo;
+
+		paramYN = true;
+	}
+
+	if( currentPage.indexOf("/list.jsp") > -1){
+		const urlParams  =  new URLSearchParams(window.location.search);
+
+		let cate = urlParams.get('cate');
+		let card = urlParams.get('card');
+		let shopcode = urlParams.get('shopcode');
+		let shop_code = urlParams.get('shop_code');
+		let benefits = urlParams.get('benefits');
+		let delivery = urlParams.get('delivery');
+		let factory = urlParams.get('factory');
+		let brand = urlParams.get('brand');
+		let spec = urlParams.get('spec');
+		let rental = urlParams.get('rental');
+		let in_keyword = urlParams.get('in_keyword');
+
+		if(cate)  result.cate= cate;
+		if(card)  result.card= card;
+		if(shopcode)  result.shopcode= shopcode;
+		if(shop_code)  result.shopcode= shop_code;
+		if(benefits)  result.benefits= benefits;
+		if(delivery)  result.delivery= delivery;
+		if(factory)  result.factory= factory;
+		if(brand)  result.brand= brand;
+		if(spec)  result.spec= spec;
+		if(rental)  result.rental= rental;
+		if(in_keyword)  result.in_keyword= in_keyword;
+
+		/*
+		"cate= (카테코드)
+		&tabType=1
+		&card= (카드할인 파라미터)
+		&shopcode= (쇼핑몰 파라미터)
+		&benefits=99 (오늘출발 파라미터)
+		&benefits=4 (와우할인가 파라미터)
+		&delivery=Y (배송비포함 파라미터)
+		&factory= (제조사 파라미터)
+		&brand= (브랜드 파라미터)
+		&spec= (스펙속성 파라미터)
+		&rental=Y (중고/렌탈 제외 파라미터)
+		&in_keyword= (결과 내 재검색 파라미터)"
+		*/
+		paramYN = true;
+
+	}
+
+	//로그인은 리턴 url 을 날려준다
+	if( currentPage.indexOf("/member/login/login.jsp") > -1 ){
+		//const urlParams  =  new URLSearchParams(window.location.search);
+
+		paramYN = true;
+	}
+	if( currentPage.indexOf("/global/list.jsp") > -1 ){
+		const urlParams  =  new URLSearchParams(window.location.search);
+		let shop = urlParams.get('shop');
+		if(shop)  result.shop= shop;
+		if(shop === 'category') {
+			result.code= 'EED'
+			return result;
+		}
+		paramYN = true;
+	}
+	if( currentPage.indexOf("/global/search.jsp") > -1 ){
+		const urlParams  =  new URLSearchParams(window.location.search);
+		let word = urlParams.get('word');
+		if(word)  result.shop= word;
+
+		paramYN = true;
+	}
+
+	if( currentPage.indexOf("/global/mvp.jsp") > -1 ){
+		const urlParams  =  new URLSearchParams(window.location.search);
+		let muid = urlParams.get('muid');
+		if(muid)  result.muid= muid;
+
+		paramYN = true;
+	}
+
+	if( currentPage.indexOf("/member/login/login.jsp") > -1 ){
+		const urlParams  =  new URLSearchParams(window.location.search);
+		let isAdult = urlParams.get('isAdult');
+		if(isAdult) result.isAdult= isAdult;
+		if(isAdult === 'Y') {
+			result.code= 'EMED'
+			return result;
+		}
+
+		paramYN = true;
+	}
+
+	if( currentPage.indexOf("/my/eclub.jsp") > -1 ){
+		const urlParams  =  new URLSearchParams(window.location.search);
+		let isType = urlParams.get('t');
+		if(isType) result.t= isType;
+
+		paramYN = true;
+	}
+	if( currentPage.indexOf("/my/reward_notice.jsp") > -1 ){
+		const urlParams  =  new URLSearchParams(window.location.search);
+		let shop_code = urlParams.get('shop_code');
+		if(shop_code) result.t= shop_code;
+
+		paramYN = true;
+	}
+
+	if( currentPage.indexOf("/pick/exh_index.jsp") > -1 ){
+		const urlParams  =  new URLSearchParams(window.location.search);
+		let tab = urlParams.get('tab');
+		if(tab) result.tab= tab;
+
+		paramYN = true;
+	}
+
+	if( currentPage.indexOf("/healthy/ingredient.jsp") > -1 ){
+		const urlParams = new URLSearchParams(window.location.search);
+		let tab1 = urlParams.get('tab1');
+		let tab2 = urlParams.get('tab2');
+		let tab3 = urlParams.get('tab3');
+		let pageNum = urlParams.get('pageNum');
+		if(tab1) result.tab1 = tab1;
+		if(tab2) result.tab2 = tab2;
+		if(tab3) result.tab3 = tab3;
+		if(pageNum && /^-?\d+$/.test(pageNum)) result.page_num = parseInt(pageNum, 10);
+		paramYN = true;
+	}
+	if( currentPage.indexOf("/healthy/target.jsp") > -1 ){
+		const urlParams = new URLSearchParams(window.location.search);
+		let tab1 = urlParams.get('tab1');
+		let tab2 = urlParams.get('tab2');
+		let tab3 = urlParams.get('tab3');
+		let pageNum = urlParams.get('pageNum');
+		if(tab1) result.tab1 = tab1;
+		if(tab2) result.tab2 = tab2;
+		if(tab3) result.tab3 = tab3;
+		if(pageNum && /^-?\d+$/.test(pageNum)) result.page_num = parseInt(pageNum, 10);
+		paramYN = true;
+	}
+	if( currentPage.indexOf("/healthy/tip.jsp") > -1 ){
+		const urlParams = new URLSearchParams(window.location.search);
+		let tab = urlParams.get('tab');
+		if(tab) result.tab = tab;
+		paramYN = true;
+	}
+	if( currentPage.indexOf("/healthy/") > -1 || currentPage.indexOf("/event") > -1
+	 	|| currentPage.indexOf("/pick/pick_index.jsp") > -1 || currentPage.indexOf("/view/shopBest.jsp") > -1
+		|| currentPage.indexOf("/cmexhibition/lowest_30days.jsp") > -1
+		|| currentPage.indexOf("/view/popular_keywords.jsp") > -1 ){
+
+		paramYN = true;
+	}
+
+	if( currentPage.indexOf("www.enuri.com/?srsltid") > -1 ){
+
+		paramYN = true;
+	}
+
+	// /my/my_enuri.jsp — name 파라미터별 page code 분기
+	if( currentPage.indexOf("/my/my_enuri.jsp") > -1 ){
+		const urlParams = new URLSearchParams(window.location.search);
+		let name = urlParams.get('name') || 'home';
+		let myEnuriPageCode = {
+			'home':           'EMMA',
+			'report':         'EMMB',
+			'eclub_benefit':  'EMMC',
+			'emoney':         'EMMD',
+			'ecoupon':        'EMME',
+			'zzim':           'EMMF',
+			'recent_goods':   'EMMG',
+			'recent_cate':    'EMMH'
+		}[name];
+		if(myEnuriPageCode) {
+			result.code = myEnuriPageCode;
+			return result;
+		}
+	}
+
+	if( paramYN ){
+		cleanedUrl = currentPage.split('?')[0];
+	}
+
+	let pc_url_code = {
+			"https://www.enuri.com/": "EAA",
+			"https://www.enuri.com/Index.jsp": "EAA",
+			"https://www.enuri.com/search.jsp": "EAB",
+			"https://www.enuri.com/list.jsp": "EAC",
+			//"https://www.enuri.com/detail.jsp": "EAD",
+			"https://www.enuri.com/cmexhibition/coupangexh.jsp": "EAG",
+			"https://www.enuri.com/cmexhibition/main.jsp": "EAOB",
+			"https://www.enuri.com/cmexhibition/lowest_30days.jsp": "EAW",
+			"https://www.enuri.com/move/Redirect.jsp": "EAH",
+			"https://www.enuri.com/view/shopBest.jsp": "EAJ",
+			"https://www.enuri.com/my/eclub.jsp": "EAKA",
+			"https://www.enuri.com/my/emoney_benefit.jsp":"EAU",
+			"https://www.enuri.com/my/reward_notice.jsp":"EAV",
+			"https://www.enuri.com/faq/customer_seller.jsp?faq_type=4&kind=": "EAL",
+			"https://www.enuri.com/view/mallsearch/Listmall.jsp": "EAM",
+			"https://www.enuri.com/pick/pick_index.jsp": "EAO",
+			"https://www.enuri.com/pick/exh_index.jsp": "EAO",
+			"https://www.enuri.com/etc/Site_map.jsp": "EAR",
+			"https://www.enuri.com/faq/customer_main.jsp": "EMMJ",
+			"https://www.enuri.com/member/login/login.jsp": "EMAA",
+			"https://www.enuri.com/member/login/enuriOneID.jsp": "EMAB",
+			"https://www.enuri.com/member/login/link.jsp": "EMAB",
+			"https://www.enuri.com/member/login/find_id_pw.jsp?tab=id": "EMBA",
+			"https://www.enuri.com/member/login/find_id_pw.jsp?tab=pw": "EMBB",
+			"https://www.enuri.com/member/join/join.jsp": "EMCA",
+			"https://www.enuri.com/member/join/joinSDU.jsp": "EMCD",
+			"https://www.enuri.com/member/join/join_sdu.jsp": "EMCE",
+			"https://www.enuri.com/member/join/joinSDUL.jsp": "EMCF",
+			"https://www.enuri.com/member/join/join_sdul.jsp": "EMCG",
+			"https://www.enuri.com/member/login/complete.jsp": "EMCH",
+			"https://www.enuri.com/member/info/infoPwChk.jsp": "EMDA",
+			"https://www.enuri.com/member/info/infoSnsChk.jsp": "EMDB",
+			"https://www.enuri.com/member/info/Passchg_Main.jsp?IS_PASS_CAPS=0": "EMDC",
+			"https://www.enuri.com/member/info/chgEmail.jsp": "EMDD",
+			"https://www.enuri.com/member/oauth/callbackKakao.jsp?code=": "EMEB",
+			"https://www.enuri.com/member/oauth/callbackNaver.jsp?code=": "EMEC",
+			"https://www.enuri.com/member/join/InactiveUser.jsp": "EMFA",
+			"https://www.enuri.com/member/unlock/unlock_pc.jsp": "EMFB",
+			"https://www.enuri.com/member/info/info.jsp": "EMGA",
+			"https://www.enuri.com/member/info/secede_proc.jsp": "EMGB",
+			"https://www.enuri.com/healthy/index.jsp": "EDA",
+			"https://www.enuri.com/healthy/ingredient.jsp": "EDB",
+			"https://www.enuri.com/healthy/target.jsp": "EDC",
+			"https://www.enuri.com/healthy/tip.jsp": "EDD",
+			"https://www.enuri.com/healthy/search.jsp": "EDF",
+			"https://www.enuri.com/global/Index.jsp" : "EEA",
+			"https://www.enuri.com/global/list.jsp":"EEB",
+			"https://www.enuri.com/global/search.jsp":"EEC",
+			"https://www.enuri.com/global/list.jsp?shop=category&cate=":"EED",
+			"https://www.enuri.com/global/mvp.jsp":"EEE",
+			"https://www.enuri.com/global/guide.jsp":"EEF",
+			"https://www.enuri.com/faq/customer_faq.jsp?faq_type=1&kind=7":"EEG",
+			"https://www.enuri.com/healthy/pedometer.jsp":"EDE",
+			"https://www.enuri.com/healthy/pedometer_pc.jsp":"EDE",
+			"https://www.enuri.com/healthy/promotion.jsp":"EAOD",
+			"https://www.enuri.com/event/newMemberBenefit.jsp":"EAOD",
+			"https://www.enuri.com/event/paybackStamp.jsp":"EAOD",
+			"https://www.enuri.com/event/academy.jsp":"EAOF",
+			"https://www.enuri.com/event/coupangeats.jsp":"EAOG",
+			"https://www.enuri.com/event/guide.jsp":"",
+			"https://www.enuri.com/event2025/benefitManual.jsp":"EAOE",
+			"https://www.enuri.com/event2025/chuseok_evt.jsp":"EAOE",
+			"https://www.enuri.com/event2025/guide.jsp":"EAOE",
+			"https://www.enuri.com/view/popular_keywords.jsp":"EAOC"
+
+			}
+	let returnVal = {};
+	 try{
+		 returnVal.params = toLowerKeys(result);
+		 returnVal.code = pc_url_code[cleanedUrl];
+
+		 // 마케팅/광고 파라미터(utm_*, gclid, gad_source, gbraid, fbclid 등)가 붙어 들어오면
+		 // 전체 URL 매칭이 실패해 PV/이벤트위임이 초기화되지 않는다. 쿼리스트링 제거 후 재매칭한다.
+		 // (find_id_pw.jsp?tab=id 등 쿼리 포함 키는 위 전체 URL 매칭에서 이미 우선 처리됨)
+		 if( returnVal.code === undefined ){
+			 returnVal.code = pc_url_code[currentPage.split('?')[0]];
+		 }
+
+	 }catch(e){
+		 console.log(e);
+	 }
+	 return returnVal;
+ }
+
+
+
+ // uxlog 페이지코드 자동 설정 — IIFE 이후 실행 보장
+ if( pageVal.code ){
+     if (window.uxlog) {
+         console.log("pc uxlog payload 이벤트 위임 정상 ");
+         uxlog.setDefaultPageCode(pageVal.code);
+         uxlog.enableEventDelegation();
+     }
+ }
+
+ // 세일즈포스 유입경로용 전시카테고리코드 — LP(list.jsp) 유입일 때만 값 존재, 그 외 유입·referrer 부재 시 빈값 반환
+ function getUiCateCodeFromReferrer() {
+	 try {
+		 const referrer = new URL(document.referrer);
+		 if (referrer.pathname !== '/list.jsp' && referrer.pathname !== '/m/list.jsp') return '';
+		 return referrer.searchParams.get('cate') || '';
+	 } catch(e) {
+		 return '';
+	 }
+ }
+
+ function dsac(pageCode, params = {}) {
+	 let device = isMobileDsac() ? "mw" : "pc";
+
+	 // 원부(EAD) PV 한정 ui_cate_code 적재 — 값 없으면 키 자체를 미전송
+	 if (pageCode === 'EAD') {
+		 let uiCateCode = getUiCateCodeFromReferrer();
+		 if (uiCateCode) params.ui_cate_code = uiCateCode;
+	 }
+
+	 try {
+		 if (window.DSAC_V2 && typeof DSAC_V2.execute === 'function') {
+			 DSAC_V2.execute({
+				 mid: "",
+				 platform: device,
+				 page: pageCode,
+				 action: "pv",
+				 params: toLowerKeys(params)
+			 });
+		 }
+	 } catch(e) {
+		 console.log(e);
+	 }
+ }
+	// www.enuri.com에서 찾기
+		 //추가 추후 페이지가 추가 된다면 여기에 추가해 줘야된다.
+</script>
+</head>
+<body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KXJLQ9T"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) --><div class="move_wrap">
+		<div class="move_zone">
+			<div class="move_layout">
+				<div class="cont_area ">
+					<div class="top_area">
+						<h1>
+							<!-- Zum -->
+							<span class="logo"><img src="https://storage.enuri.info/logo/logo20/logo_20_20883.png" onerror="$(this).replaceWith('쇼핑엔티')"></span> <span class="txt_move">쇼핑몰로 이동중 입니다.</span>
+							</h1>
+						<div class="btn_mv">
+							<a href="javascript:void(0);" class="stop" title="쇼핑몰이동 멈춤" id="move_stop" onclick="changeImgNew('stop');">일시정지</a>
+                            <a href="javascript:void(0);" class="play" title="쇼핑몰이동" id="move_start" onclick="changeImgNew('start');">play</a>
+						</div>
+						<div class="bar_area">
+							<img src="https://img.enuri.info/images/bridge/lodingbar.gif" />
+						</div>
+					</div>
+					<div class="cont_zone">
+					<div class="dis_price dis_price_BP ">
+						<strong class="tit">에누리할인가</strong>
+                        <span class="pricing"><strong class="num">546,360</strong>원</span>
+                        <span class="deli_price">(무료배송)</span>
+					</div>
+					<div class="guide_area guide_BP">
+						<span class="txt">쇼핑몰에서 <b>정확한 가격과 상품정보를 꼭 다시 확인</b> 하시고 구매하세요! </span>
+					</div>
+					<ol class="tip tip_BP">
+						<li><em class="number">1.</em> "에누리"와 쇼핑몰의 상품정보, 가격이 일치하지 않을 수 있습니다.
+                            <span class="underline">쇼핑몰 이동 후 반드시 상품정보 및 가격을 다시 한번 확인</span>하세요.</li>
+						<li><em class="number">2.</em> "에누리"를 운영하는 ㈜커넥트웨이브는 통신판매 정보제공자로
+                            <span>상품의 주문/배송/환불에 대한 의무와 책임은 각 쇼핑몰(판매자)에게 있습니다.</span></li>
+                        <li><em class="number">3.</em> 해외구매 상품은 관/부가세 및 환율에 따라 실제 구매금액과 차이 날 수 있으니, 반드시 상세페이지와 실제 결제 금액을 확인 후 구매하세요.</li>
+						<li><em class="number">4.</em> 안전한 구매를 위해 안전거래(에스크로,전자 보증 등)를 통해 구매하시기 바랍니다.
+						안전거래를 이용하지 않고 결제하는 경우, 고객에서 상품 미배송 등의 피해가 발생할 수 있습니다. 상품 구매 전, 해당 쇼핑몰의 구매안전 서비스를 절차를 반드시 확인해 주세요.</li>
+						<li><em class="number">5.</em> 쇼핑몰 이동 후 할인쿠폰이 있을 경우, 쿠폰 다운받기 하신 후 결제 단계에서 적용해야 해당 가격으로 구매 가능합니다.</li>
+					</ol>
+				</div>
+			</div>
+			</div>
+	<div class="copyright">
+		Copyright ⓒ <b>connectwave</b> Co., Ltd. All Rights Reserved.</div>
+	</div>
+	</div>
+
+	</body>
+</html>
+<script language=javascript src="/common/js/Log_Tail.js"></script>
