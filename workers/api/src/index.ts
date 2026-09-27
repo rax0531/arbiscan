@@ -1,4 +1,6 @@
-﻿export interface Env {
+import { calculateArbitrage } from '@arbiscan/calculator';
+
+export interface Env {
   ENVIRONMENT: string;
   SUPABASE_URL?: string;
   SUPABASE_SERVICE_ROLE_KEY?: string;
@@ -23,6 +25,82 @@ const supabaseHeaders = (env: Env, prefer?: string) => ({
   'Content-Type': 'application/json',
   ...(prefer ? { Prefer: prefer } : {}),
 });
+
+
+type ExchangeRateRow = {
+  base_currency: string;
+  quote_currency: string;
+  rate: number;
+  observed_at: string;
+  source: string | null;
+  rate_date: string | null;
+};
+
+/*
+ * Supabase exchange_rates에서 최신 환율 1건을 조회한다.
+ *
+ * - Frankfurter를 Worker에서 직접 호출하지 않는다.
+ * - Edge Function이 이미 저장한 관측값을 읽기만 한다.
+ * - 환율이 없거나 유효하지 않으면 null을 반환한다. (임의 환율 사용 금지)
+ */
+async function getLatestExchangeRate(
+  env: Env,
+  baseCurrency: string,
+  quoteCurrency: string,
+): Promise<ExchangeRateRow | null> {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+    return null;
+  }
+
+  const query = new URLSearchParams({
+    select: 'base_currency,quote_currency,rate,observed_at,source,rate_date',
+    base_currency: `eq.${baseCurrency}`,
+    quote_currency: `eq.${quoteCurrency}`,
+    order: 'observed_at.desc',
+    limit: '1',
+  });
+
+  const response = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/exchange_rates?${query.toString()}`,
+    {
+      method: 'GET',
+      headers: supabaseHeaders(env),
+    },
+  );
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const rows = (await response.json()) as Array<{
+    base_currency: string;
+    quote_currency: string;
+    rate: number | string;
+    observed_at: string;
+    source: string | null;
+    rate_date: string | null;
+  }>;
+
+  const row = Array.isArray(rows) ? rows[0] : undefined;
+  if (!row) {
+    return null;
+  }
+
+  const rate = Number(row.rate);
+  if (!Number.isFinite(rate) || rate <= 0) {
+    return null;
+  }
+
+  return {
+    base_currency: row.base_currency,
+    quote_currency: row.quote_currency,
+    rate,
+    observed_at: row.observed_at,
+    source: row.source ?? null,
+    rate_date: row.rate_date ?? null,
+  };
+}
+
 
 const enuriHeaders = () => ({
   'User-Agent':
@@ -3752,6 +3830,331 @@ const confidence =
     }, 502);
   }
 }
+
+
+if (
+  url.pathname.startsWith('/api/products/') &&
+  url.pathname.endsWith('/calculate-arbitrage') &&
+  request.method === 'POST'
+) {
+  try {
+    const productId = url.pathname
+      .slice('/api/products/'.length, -'/calculate-arbitrage'.length)
+      .replace(/\/$/, '');
+
+    if (!productId) {
+      return json({
+        error: 'Product ID is required',
+      }, 400);
+    }
+
+    if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+      return json({
+        error: 'Supabase configuration is missing',
+      }, 500);
+    }
+
+    let body: {
+      shippingKrw?: number;
+      platformFeeRate?: number;
+      taxKrw?: number;
+      otherCostKrw?: number;
+    } = {};
+
+    try {
+      const raw = await request.text();
+      if (raw.trim()) {
+        body = JSON.parse(raw) as typeof body;
+      }
+    } catch {
+      return json({
+        error: 'Invalid JSON body',
+      }, 400);
+    }
+
+    const shippingKrw =
+      body.shippingKrw !== undefined ? Number(body.shippingKrw) : 0;
+    const platformFeeRate =
+      body.platformFeeRate !== undefined ? Number(body.platformFeeRate) : 0.1;
+    const taxKrw =
+      body.taxKrw !== undefined ? Number(body.taxKrw) : 0;
+    const otherCostKrw =
+      body.otherCostKrw !== undefined ? Number(body.otherCostKrw) : 0;
+
+    if (
+      !Number.isFinite(shippingKrw) ||
+      shippingKrw < 0 ||
+      !Number.isFinite(platformFeeRate) ||
+      platformFeeRate < 0 ||
+      !Number.isFinite(taxKrw) ||
+      taxKrw < 0 ||
+      !Number.isFinite(otherCostKrw) ||
+      otherCostKrw < 0
+    ) {
+      return json({
+        error:
+          'shippingKrw, platformFeeRate, taxKrw, otherCostKrw must be non-negative numbers',
+      }, 400);
+    }
+
+    const marketResponse = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/market_listings?select=*&product_id=eq.${encodeURIComponent(productId)}&order=price.asc`,
+      {
+        method: 'GET',
+        headers: supabaseHeaders(env),
+      },
+    );
+
+    if (!marketResponse.ok) {
+      const errorText = await marketResponse.text();
+      return json({
+        error: 'Failed to fetch market listings',
+        status: marketResponse.status,
+        detail: errorText,
+      }, 502);
+    }
+
+    const marketListings = (await marketResponse.json()) as Array<{
+      id: string;
+      price: number | string | null;
+      currency: string;
+      market: string;
+      title?: string;
+      external_id?: string | null;
+      url?: string | null;
+      observed_at?: string;
+    }>;
+
+    const marketListing = Array.isArray(marketListings)
+      ? marketListings.find(
+          (row) =>
+            Number.isFinite(Number(row.price)) &&
+            Number(row.price) > 0,
+        )
+      : undefined;
+
+    if (!marketListing) {
+      return json({
+        error: 'No valid overseas market listing found',
+        productId,
+      }, 404);
+    }
+
+    const koreanResponse = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/korean_listings?select=*&product_id=eq.${encodeURIComponent(productId)}&order=price_krw.asc`,
+      {
+        method: 'GET',
+        headers: supabaseHeaders(env),
+      },
+    );
+
+    if (!koreanResponse.ok) {
+      const errorText = await koreanResponse.text();
+      return json({
+        error: 'Failed to fetch korean listings',
+        status: koreanResponse.status,
+        detail: errorText,
+      }, 502);
+    }
+
+    const koreanListings = (await koreanResponse.json()) as Array<{
+      id: string;
+      price_krw: number | string | null;
+      marketplace: string;
+      title?: string;
+      external_id?: string | null;
+      url?: string | null;
+      seller_name?: string | null;
+      observed_at?: string;
+    }>;
+
+    const koreanListing = Array.isArray(koreanListings)
+      ? koreanListings.find(
+          (row) =>
+            Number.isFinite(Number(row.price_krw)) &&
+            Number(row.price_krw) > 0,
+        )
+      : undefined;
+
+    if (!koreanListing) {
+      return json({
+        error: 'No valid Korean listing found',
+        productId,
+      }, 404);
+    }
+
+    const sourcePrice = Number(marketListing.price);
+    const sellingPriceKrw = Number(koreanListing.price_krw);
+    const sourceCurrency = String(marketListing.currency || '').toUpperCase();
+
+    if (!sourceCurrency) {
+      return json({
+        error: 'Overseas listing currency is missing',
+        productId,
+        marketListingId: marketListing.id,
+      }, 422);
+    }
+
+    // KRW 표시 가격이면 환율 변환 불필요
+    let fxRate = 1;
+    let exchangeRate: ExchangeRateRow | null = null;
+
+    if (sourceCurrency !== 'KRW') {
+      exchangeRate = await getLatestExchangeRate(
+        env,
+        sourceCurrency,
+        'KRW',
+      );
+
+      if (!exchangeRate) {
+        return json({
+          error: 'Exchange rate not available',
+          productId,
+          baseCurrency: sourceCurrency,
+          quoteCurrency: 'KRW',
+        }, 422);
+      }
+
+      fxRate = exchangeRate.rate;
+    }
+
+    const calculation = calculateArbitrage({
+      sourcePrice,
+      fxRate,
+      shippingKrw,
+      platformFeeRate,
+      taxKrw,
+      otherCostKrw,
+      sellingPriceKrw,
+    });
+
+    /*
+     * 계산 결과는 항상 반환한다.
+     * arbitrage_opportunities 저장 실패는 응답을 실패로 만들지 않는다.
+     */
+    let savedOpportunity: {
+      id: string;
+      calculated_at?: string;
+    } | null = null;
+    let saveError: string | null = null;
+
+    try {
+      const saveResponse = await fetch(
+        `${env.SUPABASE_URL}/rest/v1/arbitrage_opportunities`,
+        {
+          method: 'POST',
+          headers: {
+            ...supabaseHeaders(env),
+            Prefer: 'return=representation',
+          },
+          body: JSON.stringify({
+            product_id: productId,
+            source_listing_id: marketListing.id,
+            target_listing_id: koreanListing.id,
+            fx_rate: fxRate,
+            shipping_krw: shippingKrw,
+            fees_krw: calculation.platformFeeKrw,
+            tax_krw: taxKrw,
+            other_cost_krw: otherCostKrw,
+            total_cost_krw: calculation.totalCostKrw,
+            selling_price_krw: sellingPriceKrw,
+            net_profit_krw: calculation.netProfitKrw,
+            roi_percent: calculation.roiPercent,
+            calculated_at: new Date().toISOString(),
+          }),
+        },
+      );
+
+      if (!saveResponse.ok) {
+        saveError = await saveResponse.text();
+      } else {
+        const saved = await saveResponse.json();
+        const row = Array.isArray(saved) ? saved[0] : saved;
+        if (row && typeof row === 'object' && 'id' in row) {
+          savedOpportunity = {
+            id: String((row as { id: string }).id),
+            calculated_at:
+              (row as { calculated_at?: string }).calculated_at ??
+              undefined,
+          };
+        }
+      }
+    } catch (error) {
+      saveError =
+        error instanceof Error
+          ? error.message
+          : String(error);
+    }
+
+    return json({
+      ok: true,
+      productId,
+      inputs: {
+        sourcePrice,
+        sourceCurrency,
+        fxRate,
+        shippingKrw,
+        platformFeeRate,
+        taxKrw,
+        otherCostKrw,
+        sellingPriceKrw,
+      },
+      calculation,
+      sourceListing: {
+        id: marketListing.id,
+        market: marketListing.market,
+        externalId: marketListing.external_id ?? null,
+        title: marketListing.title ?? null,
+        url: marketListing.url ?? null,
+        price: sourcePrice,
+        currency: sourceCurrency,
+        observedAt: marketListing.observed_at ?? null,
+      },
+      targetListing: {
+        id: koreanListing.id,
+        marketplace: koreanListing.marketplace,
+        externalId: koreanListing.external_id ?? null,
+        title: koreanListing.title ?? null,
+        url: koreanListing.url ?? null,
+        priceKrw: sellingPriceKrw,
+        sellerName: koreanListing.seller_name ?? null,
+        observedAt: koreanListing.observed_at ?? null,
+      },
+      exchangeRate: exchangeRate
+        ? {
+            baseCurrency: exchangeRate.base_currency,
+            quoteCurrency: exchangeRate.quote_currency,
+            rate: exchangeRate.rate,
+            observedAt: exchangeRate.observed_at,
+            source: exchangeRate.source,
+            rateDate: exchangeRate.rate_date,
+          }
+        : {
+            baseCurrency: 'KRW',
+            quoteCurrency: 'KRW',
+            rate: 1,
+            observedAt: null,
+            source: 'identity',
+            rateDate: null,
+          },
+      persistence: {
+        saved: savedOpportunity !== null,
+        opportunityId: savedOpportunity?.id ?? null,
+        calculatedAt: savedOpportunity?.calculated_at ?? null,
+        error: saveError,
+      },
+    });
+  } catch (error) {
+    return json({
+      error: 'Arbitrage calculation failed',
+      detail:
+        error instanceof Error
+          ? error.message
+          : String(error),
+    }, 502);
+  }
+}
+
 
 return json({ error: 'Not Found' }, 404);
  },
